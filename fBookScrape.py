@@ -2,8 +2,11 @@ from facepy import GraphAPI, exceptions
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import Flowable, Paragraph, SimpleDocTemplate, Spacer, Image
+from reportlab.platypus import CondPageBreak, PageBreak, Flowable, Paragraph, SimpleDocTemplate, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER
+from datetime import datetime
+import time
 
 class MCLine(Flowable):
     """
@@ -31,10 +34,14 @@ http://two.pairlist.net/pipermail/reportlab-users/2005-February/003695.html
         self.canv.line(0, self.height, self.width, self.height)
 
 def get_graphAPI():
-	graph = GraphAPI("CAACEdEose0cBADyZBaPpNCCJpwTh8CpDNklFcG6UG54LWVpZCMIPL0RkKkOqAJw3hUcumTeRtStsPQfVmpgzWv7vUaP7x2lpaZBcqInsjgZBEoUo41z7YYbgoAvcfkZAYI9S7MtKwjxgeX7pOazqyGELTLUkx8xyroatuukbHVztqLqYvE02Xt06rGrNZCJINA7rr2OkaVxZBDnpnnHys5ZB")
+	graph = GraphAPI("CAACEdEose0cBALZCik2ykRHF4ZAJvf3u2jFVZA2DsGeSRqp1fCt9KoXZBdszRIBogOTo2im3VUefqUOHMbZCFvpWLnupHpPbwDeGeNcEkKfuyX5vjSDZCqomvQCOOr6TUsDWZBQAY1pBJhvCh2ZBJSZAcKSKCJAGx3GYTckqkn1u6793ojy7ZAf4mkRlSXmqcMAzC4F2RjZBZC3MFSciIsac6UdS")
 	response = graph.get('/175579742455688/feed', page=True)
 	return response
 
+def get_title_desc():
+	graph = GraphAPI("CAACEdEose0cBALZCik2ykRHF4ZAJvf3u2jFVZA2DsGeSRqp1fCt9KoXZBdszRIBogOTo2im3VUefqUOHMbZCFvpWLnupHpPbwDeGeNcEkKfuyX5vjSDZCqomvQCOOr6TUsDWZBQAY1pBJhvCh2ZBJSZAcKSKCJAGx3GYTckqkn1u6793ojy7ZAf4mkRlSXmqcMAzC4F2RjZBZC3MFSciIsac6UdS")
+	response = graph.get('/175579742455688')
+	return response
 
 def hello_pdf(page):
  	def hello(c):
@@ -44,34 +51,48 @@ def hello_pdf(page):
  	c.showPage()
  	c.save()
  
-def createCanvas():
-	return SimpleDocTemplate("hello2.pdf", pagesize=letter,
+def createCanvas(title, description):
+	doc, story = SimpleDocTemplate("hello2.pdf", pagesize=letter,
 							  rightMargin=72, leftMargin=72,
-							  topMargin=72, bottomMargin=18), []
+							  topMargin=72, bottomMargin=72), []
+	styles = getSampleStyleSheet()
+	styles.add(ParagraphStyle(name='titler', fontSize=24, leading=26, alignment=TA_CENTER))
+	styles.add(ParagraphStyle(name='description', alignment=TA_JUSTIFY, borderWidth=1, borderColor="black", borderPadding=2, borderRadius=10))
+	story.append(Paragraph(title, styles['titler']))
+	story.append(Spacer(1, 12))
+	story.append(Paragraph(description, styles['description']))
+	return doc, story
 
 def draw_page(story, page):
 	styles = getSampleStyleSheet()
+	styles.add(ParagraphStyle(name='post', leftIndent=10, allowWidows=0, borderWidth=1, borderColor="black", borderPadding=2))
+	styles.add(ParagraphStyle(name='postName', allowWidows=0, borderWidth=1, borderColor="black", borderPadding=2))
 	styles.add(ParagraphStyle(name='comment', leftIndent=25, rightIndent=25, borderWidth=1, borderColor="black", borderPadding=2))
-	styles.add(ParagraphStyle(name='commentName', leftIndent=15, rightIndent=25))
+	styles.add(ParagraphStyle(name='commentName', leftIndent=15, rightIndent=25, borderWidth=1, borderColor="black", borderPadding=2, borderRadius=2))
 	line = MCLine(500)
 	try:
 		for i in page['data']:
+			pname = i['from']['name'].encode('ascii', 'ignore')
 			ptext = i['message'].encode('ascii', 'ignore').replace("\n", '<br />\n')
-			story.append(Spacer(1, 12))
-			story.append(Paragraph(ptext, styles["Normal"]))
+			ptime = datetime.strptime(i['created_time'], "%Y-%m-%dT%H:%M:%S+0000")
+			pname = pname + " at " + str(ptime.date())
+			story.append(Paragraph(pname, styles["postName"]))
+			story.append(Spacer(1, 4.5))
+			story.append(Paragraph(ptext, styles["post"]))
 			story.append(Spacer(1, 12))
 			try:
 				for j in i['comments']['data']:
 					pname = j['from']['name'].encode('ascii', 'ignore')
+					ptext = j['message'].encode('ascii', 'ignore').replace("\n", '<br />\n')
 					story.append(Paragraph(pname, styles["commentName"]))
-					story.append(Spacer(1, 6))
+					story.append(Spacer(1, 4.5))
 					ptext = j['message'].encode('ascii', 'ignore').replace("\n", '<br />\n')
 					story.append(Paragraph(ptext, styles["comment"]))
 					story.append(Spacer(1, 12))
 					
 			except KeyError:
 		 		print "Key Error in draw_page"
-			story.append(line)
+			# story.append(line)
 	except KeyError:
 		print "Invalid Message"
 
@@ -93,12 +114,13 @@ def draw_page(story, page):
 # messages are in response['data'][0]['message']
 # comments are in response['data'][0]['comments']['data'][0]['message']
 # 	to find number of comments, use len(response['data'][0]['comments']['data'][0])
-doc, Story = createCanvas()
-pages = get_graphAPI()
 
+pages = get_graphAPI()
+title_desc = get_title_desc()
+doc, Story = createCanvas(title_desc['name'], title_desc['description'])
 # try:
 #for page in pages:
-for x in range(50):
+for x in range(1):
 	page = pages.next()
 	draw_page(Story, page)
 	try:
