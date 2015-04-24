@@ -13,7 +13,7 @@ class MCLine(Flowable):
     """
     Line flowable --- draws a line in a flowable
 
-	http://two.pairlisdata.net/pipermail/reportlab-users/2005-February/003695.html
+http://two.pairlist.net/pipermail/reportlab-users/2005-February/003695.html
 
     """
  
@@ -35,13 +35,12 @@ class MCLine(Flowable):
         self.canv.line(0, self.height, self.width, self.height)
 
 def get_graphAPI():
-	graph = GraphAPI("CAACEdEose0cBAEQn5MiL537sBMILYu9ItT9ImPoc6JgGY4LYfvalNPN3fx8jAO66ncaNNZCvOyApv4ySQWoJsWQ0zRY8wKcbPo6EZBgcS5D1UWqTGzR09jZChmoq4TK2HZBWcrT7m1Ga2K10hjzZB8pCkjNpZA2DC9CteZClm3iYzpOexlvn07dx4nZCSqEXPmOeJ2SZBWKZC4vTjhZAFM6dT1y")
-	# response = graph.get('/175579742455688/feed', page=True)
-	response = graph.get('175579742455688/feed?since=2011-01-01T01:00:00&until=2012-01-01T01:00:00', page=True)
+	graph = GraphAPI("CAACEdEose0cBALZCik2ykRHF4ZAJvf3u2jFVZA2DsGeSRqp1fCt9KoXZBdszRIBogOTo2im3VUefqUOHMbZCFvpWLnupHpPbwDeGeNcEkKfuyX5vjSDZCqomvQCOOr6TUsDWZBQAY1pBJhvCh2ZBJSZAcKSKCJAGx3GYTckqkn1u6793ojy7ZAf4mkRlSXmqcMAzC4F2RjZBZC3MFSciIsac6UdS")
+	response = graph.get('/175579742455688/feed', page=True)
 	return response
 
 def get_title_desc():
-	graph = GraphAPI("CAACEdEose0cBAEQn5MiL537sBMILYu9ItT9ImPoc6JgGY4LYfvalNPN3fx8jAO66ncaNNZCvOyApv4ySQWoJsWQ0zRY8wKcbPo6EZBgcS5D1UWqTGzR09jZChmoq4TK2HZBWcrT7m1Ga2K10hjzZB8pCkjNpZA2DC9CteZClm3iYzpOexlvn07dx4nZCSqEXPmOeJ2SZBWKZC4vTjhZAFM6dT1y")
+	graph = GraphAPI("CAACEdEose0cBALZCik2ykRHF4ZAJvf3u2jFVZA2DsGeSRqp1fCt9KoXZBdszRIBogOTo2im3VUefqUOHMbZCFvpWLnupHpPbwDeGeNcEkKfuyX5vjSDZCqomvQCOOr6TUsDWZBQAY1pBJhvCh2ZBJSZAcKSKCJAGx3GYTckqkn1u6793ojy7ZAf4mkRlSXmqcMAzC4F2RjZBZC3MFSciIsac6UdS")
 	response = graph.get('/175579742455688')
 	return response
 
@@ -82,20 +81,19 @@ def draw_page(story, page):
 			story.append(Paragraph(pname, styles["postName"]))
 			story.append(Spacer(1, 4.5))
 			story.append(Paragraph(ptext, styles["post"]))
-			story.append(Spacer(1, 4.5))
+			story.append(Spacer(1, 12))
 			try:
 				for j in i['comments']['data']:
 					pname = j['from']['name'].encode('ascii', 'ignore')
 					ptext = j['message'].encode('ascii', 'ignore').replace("\n", '<br />\n')
 					story.append(Paragraph(pname, styles["commentName"]))
 					story.append(Spacer(1, 4.5))
+					ptext = j['message'].encode('ascii', 'ignore').replace("\n", '<br />\n')
 					story.append(Paragraph(ptext, styles["comment"]))
-					story.append(Spacer(1, 4.5))
+					story.append(Spacer(1, 12))
 					
 			except KeyError:
 		 		print "Key Error in draw_page"
-			story.append(Spacer(1, 12))
-			
 			# story.append(line)
 	except KeyError:
 		print "Invalid Message"
@@ -124,8 +122,8 @@ title_desc = get_title_desc()
 doc, Story = createCanvas(title_desc['name'], title_desc['description'])
 # try:
 #for page in pages:
-for page in pages:
-	# page = pages.next()
+for x in range(1):
+	page = pages.next()
 	draw_page(Story, page)
 	try:
 		for i in page['data']:
